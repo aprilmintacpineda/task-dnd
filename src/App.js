@@ -4,40 +4,14 @@ import {
   DragDropContext,
   Droppable
 } from 'react-beautiful-dnd';
-import styled from 'styled-components';
+import {
+  ColumnsContainer,
+  Column,
+  GhostPlaceholder,
+  Task,
+  marginTop
+} from 'components/presentational/styledComponents/todoComponents';
 import initialData from 'initialData';
-
-const ColumnsContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  margin: 10px;
-`;
-
-const Column = styled.div`
-  border: 1px solid #000;
-  padding: 10px;
-  min-width: 250px;
-`;
-
-const GhostPlaceholder = styled.div`
-  position: absolute;
-  will-change: top;
-  top: ${({ top }) => top || 0}px;
-  left: 0;
-  width: ${({ width }) => width || 0}px;
-  height: ${({ height }) => height || 0}px;
-  opacity: 0.3;
-`;
-
-const marginTop = 5;
-const Task = styled.div`
-  border: 1px solid #000;
-  margin-top: ${marginTop}px;
-  padding: 5px;
-  cursor: pointer;
-  background-color: ${({ isDragging }) =>
-    isDragging ? 'lightgreen' : 'white'};
-`;
 
 function getDraggedElement (id) {
   const queryAttr = 'data-rbd-drag-handle-draggable-id';
@@ -48,85 +22,62 @@ function getDraggedElement (id) {
 
 function App () {
   const [state, setState] = React.useState(initialData);
-  const [customPlaceHolder, setCustomPlaceholder] = React.useState(
-    {}
+  const [
+    ghostPlaceholderProps,
+    setGhostPlaceholderProps
+  ] = React.useState({});
+
+  const computeGhostPlaceholderProps = React.useCallback(
+    (index, draggableId) => {
+      const draggedDOM = getDraggedElement(draggableId);
+      if (!draggedDOM) return;
+
+      const { offsetHeight, offsetWidth } = draggedDOM;
+      const elementsFromTop = [
+        ...draggedDOM.parentNode.children
+      ].slice(0, index);
+      const offsetTop = elementsFromTop.reduce((total, current) => {
+        const styles = window.getComputedStyle(current);
+        const marginTop = parseFloat(styles.marginTop);
+
+        return total + current.offsetHeight + marginTop;
+      }, 0);
+
+      const targetTaskId = Number(
+        draggableId.replace(/draggable-/, '')
+      );
+      const task = state.tasks.find(
+        task => task.id === targetTaskId
+      );
+
+      setGhostPlaceholderProps({
+        taskTitle: task.title,
+        height: offsetHeight,
+        width: offsetWidth,
+        top: offsetTop - marginTop
+      });
+    },
+    [state.tasks]
   );
 
   const onDragStart = React.useCallback(
     event => {
       const { source, draggableId } = event;
-      const draggedDOM = getDraggedElement(draggableId);
-      if (!draggedDOM) return;
-
-      const { offsetHeight, offsetWidth } = draggedDOM;
-      const sourceIndex = source.index;
-      const elementsFromTop = [
-        ...draggedDOM.parentNode.children
-      ].slice(0, sourceIndex);
-      const offsetTop = elementsFromTop.reduce((total, current) => {
-        const styles = window.getComputedStyle(current);
-        const marginTop = parseFloat(styles.marginTop);
-
-        return total + current.offsetHeight + marginTop;
-      }, 0);
-
-      const targetTaskId = Number(
-        draggableId.replace(/draggable-/, '')
-      );
-      const task = state.tasks.find(
-        task => task.id === targetTaskId
-      );
-
-      setCustomPlaceholder({
-        taskTitle: task.title,
-        height: offsetHeight,
-        width: offsetWidth,
-        top: offsetTop - marginTop
-      });
+      computeGhostPlaceholderProps(source.index, draggableId);
     },
-    [state.tasks]
+    [computeGhostPlaceholderProps]
   );
 
   const onDragUpdate = React.useCallback(
     event => {
-      const { destination } = event;
-      if (!destination) return;
-
-      const { draggableId } = event;
-      const draggedDOM = getDraggedElement(draggableId);
-      if (!draggedDOM) return;
-
-      const { offsetHeight, offsetWidth } = draggedDOM;
-      const destinationIndex = destination.index;
-      const elementsFromTop = [
-        ...draggedDOM.parentNode.children
-      ].slice(0, destinationIndex);
-
-      const offsetTop = elementsFromTop.reduce((total, current) => {
-        const styles = window.getComputedStyle(current);
-        const marginTop = parseFloat(styles.marginTop);
-        return total + current.offsetHeight + marginTop;
-      }, 0);
-
-      const targetTaskId = Number(
-        draggableId.replace(/draggable-/, '')
-      );
-      const task = state.tasks.find(
-        task => task.id === targetTaskId
-      );
-
-      setCustomPlaceholder({
-        taskTitle: task.title,
-        height: offsetHeight,
-        width: offsetWidth,
-        top: offsetTop - marginTop
-      });
+      const { destination, draggableId } = event;
+      computeGhostPlaceholderProps(destination.index, draggableId);
     },
-    [state.tasks]
+    [computeGhostPlaceholderProps]
   );
 
   const onDragEnd = React.useCallback(event => {
-    setCustomPlaceholder({});
+    setGhostPlaceholderProps({});
     const { source, destination, draggableId } = event;
     if (!destination) return;
 
@@ -237,10 +188,10 @@ function App () {
                         );
                       })}
                       {placeholder}
-                      {isDraggingOver && customPlaceHolder && (
-                        <GhostPlaceholder {...customPlaceHolder}>
+                      {isDraggingOver && ghostPlaceholderProps && (
+                        <GhostPlaceholder {...ghostPlaceholderProps}>
                           <Task>
-                            <p>{customPlaceHolder.taskTitle}</p>
+                            <p>{ghostPlaceholderProps.taskTitle}</p>
                           </Task>
                         </GhostPlaceholder>
                       )}
