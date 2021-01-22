@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-scripts/config/webpack.config.js b/node_modules/react-scripts/config/webpack.config.js
+index eddca1b..954abe9 100644
+--- a/node_modules/react-scripts/config/webpack.config.js
++++ b/node_modules/react-scripts/config/webpack.config.js
+@@ -750,7 +750,7 @@ module.exports = function (webpackEnv) {
+           // The formatter is invoked directly in WebpackDevServerUtils during development
+           formatter: isEnvProduction ? typescriptFormatter : undefined,
+         }),
+-      new ESLintPlugin({
++      isEnvProduction && new ESLintPlugin({
+         // Plugin options
+         extensions: ['js', 'mjs', 'jsx', 'ts', 'tsx'],
+         formatter: require.resolve('react-dev-utils/eslintFormatter'),
