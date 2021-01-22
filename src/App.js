@@ -20,14 +20,13 @@ const Column = styled.div`
 `;
 
 const GhostPlaceholder = styled.div`
-  transition: top 250ms;
   position: absolute;
   will-change: top;
   top: ${({ top }) => top || 0}px;
   left: 0;
   width: ${({ width }) => width || 0}px;
   height: ${({ height }) => height || 0}px;
-  opacity: 0.5;
+  opacity: 0.3;
 `;
 
 const marginTop = 5;
